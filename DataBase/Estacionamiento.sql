@@ -1,4 +1,7 @@
+
+#CREATE DATABASE estacionamiento;
 use estacionamiento;
+
 #SELECT USER(), CURRENT_USER();
 
 drop table VehiculoXEspacioEstacionamiento;
@@ -62,6 +65,8 @@ values( 1, 2, 5, 10),
 (2, 2, 11, 15),
 (2, 6, 11, 15);
 
+
+/*
 SELECT * FROM VehiculoXEspacioEstacionamiento as vee;
 SELECT v.id, sum(vee.horaFinal - vee.horaInicio) as TotalDeHoras, sum(vee.horaFinal - vee.horaInicio)*tv.precioXHora CostoTotal
 FROM VehiculoXEspacioEstacionamiento as vee
@@ -84,4 +89,4 @@ join EspacioEstacionamiento ee on ee.id = vee.idEspacioEstacionamiento
 order by v.id;
 
 SELECT * FROM Vehiculo;
-
+*/
