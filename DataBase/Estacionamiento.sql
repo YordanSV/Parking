@@ -25,6 +25,7 @@ create table EspacioEstacionamiento(
 );
 
 create table VehiculoXEspacioEstacionamiento(
+    id INT AUTO_INCREMENT PRIMARY KEY,
 	idVehiculo int,
 	idEspacioEstacionamiento int,
 	horaInicio int,
@@ -40,8 +41,8 @@ values(1, 'Motocicleta', 250),
 (3, 'Camion', 1000);
 
 insert into Vehiculo(id, idTipoVehiculo,marca)
-values(1 , 2, 'Toyota'),
-(2, 1, 'BMW'),
+values(1 , 1, 'Toyota'),
+(2, 2, 'BMW'),
 (3, 3, 'Suzuki');
 
 insert into EspacioEstacionamiento(id)
@@ -58,7 +59,8 @@ values(1),
 insert into VehiculoXEspacioEstacionamiento(idVehiculo, idEspacioEstacionamiento, horaInicio, horaFinal)
 values( 1, 2, 5, 10),
 (3, 3, 11, 15),
-(2, 2, 11, 15);
+(2, 2, 11, 15),
+(2, 6, 11, 15);
 
 SELECT * FROM VehiculoXEspacioEstacionamiento as vee;
 SELECT v.id, sum(vee.horaFinal - vee.horaInicio) as TotalDeHoras, sum(vee.horaFinal - vee.horaInicio)*tv.precioXHora CostoTotal
@@ -67,3 +69,19 @@ join Vehiculo v on vee.idVehiculo = v.id
 join EspacioEstacionamiento ee on vee.idEspacioEstacionamiento = ee.id
 join TipoVehiculo tv on tv.id = v.idTipoVehiculo
 group by v.id; 
+
+CALL SacarCostos();
+
+SELECT v.id as placa, case 
+when v.idTipoVehiculo = 1 then 'Motocicleta'
+when v.idTipoVehiculo = 2 then 'Carro'
+when v.idTipoVehiculo = 3 then 'Camion'
+end as tipo
+, v.marca, idEspacioEstacionamiento, horaInicio, horaFinal 
+FROM VehiculoXEspacioEstacionamiento vee 
+join Vehiculo v on v.id = vee.idVehiculo 
+join EspacioEstacionamiento ee on ee.id = vee.idEspacioEstacionamiento
+order by v.id;
+
+SELECT * FROM Vehiculo;
+
