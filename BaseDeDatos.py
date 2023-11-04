@@ -34,6 +34,7 @@ class ConexionBaseDatos:
             cursor = self.conexion.cursor()
             cursor.execute(consulta, (self.dato,))
             resultados = cursor.fetchall()
+            self.conexion.commit()
             cursor.close()
             return resultados
         
@@ -41,6 +42,12 @@ class ConexionBaseDatos:
         if self.conexion:
             cursor = self.conexion.cursor()
             cursor.execute(consulta, (idVehiculo, idEspacioEstacionamiento, horaInicio, horaFinal))
+            self.conexion.commit()
+            cursor.close()
+    def actualizarVehiculo(self, consulta, nuevoDato, placa):
+        if self.conexion:
+            cursor = self.conexion.cursor()
+            cursor.execute(consulta, (nuevoDato, placa))
             self.conexion.commit()
             cursor.close()
 

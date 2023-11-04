@@ -8,18 +8,6 @@ class Vehiculo:
         self.placa = placa
         self.marca = marca
 
-    def calcular_costoTotal(self, hora_inicio, hora_fin):
-        mi_conexion = ConexionBaseDatos(self.id)
-        mi_conexion.conectar()
-        resultados = mi_conexion.mostrarTotal("CALL SacarCostos();")
-        for fila in resultados:
-            if fila[0] == self.placa:
-                totalHoras = fila[1]
-                costo = fila[2]
-                break
-        print(f"Usted ha apartado {totalHoras} horas el total, asi que debe {costo}")
-
-
     def agregarVehiculo(self):
         mi_conexion = ConexionBaseDatos()
         mi_conexion.conectar()
@@ -27,22 +15,35 @@ class Vehiculo:
         mi_conexion.insertarVehiculo(consulta, self.placa, self.idTipo, self.marca)
         mi_conexion.desconectar()
         print("Se ha registrado exitosamente")
+    def __eq__(self, other):
+        if isinstance(other, Vehiculo):
+            return self.placa == other.placa
+        return False
+    
+    def __str__(self):                                                                      #Sobrecarga de metodo
+        return f"Vehiculo: Placa - {self.placa}, Tipo - {self.idTipo}, Marca - {self.marca}"
 
 class Motocicleta(Vehiculo):
     def __init__(self, placa, marca):
         super().__init__(placa, 1, marca)
 
-    # Puedes agregar métodos específicos para Motocicleta si es necesario.
+    def __str__(self):                                                                      #Sobrecarga de metodo
+        return f"Motocicleta: Placa - {self.placa}, Marca - {self.marca}"
 
 class Carro(Vehiculo):
     def __init__(self, placa, marca):
         super().__init__(placa, 2, marca)
 
-    # Puedes agregar métodos específicos para Carro si es necesario.
+    def __str__(self):                                                                      #Sobrecarga de metodo
+        return f"Carro: Placa - {self.placa}, Marca - {self.marca}"
 
 class Camion(Vehiculo):
     def __init__(self, placa, marca):
         super().__init__(placa, 3, marca)
+
+    def __str__(self):                                                                      #Sobrecarga de metodo
+        return f"Camión: Placa - {self.placa}, Marca - {self.marca}"
+
 
 
 class EspacioEstacionamiento:
@@ -50,6 +51,7 @@ class EspacioEstacionamiento:
         self.id = id
         self.vehiculo_apartado = None
         
+
     def verificar_disponibilidad(self, hora_inicio, hora_fin):
         mi_conexion = ConexionBaseDatos(self.id)
         mi_conexion.conectar()
@@ -70,6 +72,19 @@ class EspacioEstacionamiento:
 class Estacionamiento:
     def __init__(self, num_espacios):
         self.espacios = [EspacioEstacionamiento(x+1) for x in range(num_espacios)]
+
+
+    def calcular_costoTotal(self, placa):
+        mi_conexion = ConexionBaseDatos()
+        mi_conexion.conectar()
+        resultados = mi_conexion.ejecutar_consulta("CALL SacarCostos();")
+        for fila in resultados:
+            if fila[0] == placa:
+                totalHoras = fila[1]
+                costo = fila[2]
+                break
+        print(f"Usted ha apartado {totalHoras} horas el total, asi que debe {costo}\n")
+
 
     def buscar_espacio_disponible(self, vehiculo, hora_inicio, hora_fin):
         espacios_disponibles = []
@@ -112,6 +127,7 @@ class Estacionamiento:
 
 
 class Principal:
+
     def main(self):
         estacionamiento = Estacionamiento(num_espacios=10)  # Crear un estacionamiento con 10 espacios
 
@@ -120,7 +136,15 @@ class Principal:
                 break
                 
             
-            
+    def existeVehiculo(self, vehiculoAcomparar):
+        mi_conexion = ConexionBaseDatos()
+        mi_conexion.conectar()
+        resultados = mi_conexion.ejecutar_consulta("select * from Vehiculo")
+        for fila in resultados:
+            if Vehiculo(fila[0], fila[1], fila[2]) == vehiculoAcomparar:  #Uso de la sobrecarga
+                return True
+        return False
+
     def imprimirAgregarVehiculo(self):
         placa = int(input("Ingrese el numero de placa: "))
         marca = input("Ingrese la marca: ")
@@ -132,12 +156,15 @@ class Principal:
             newVehiculo = Carro(placa, marca)
         elif tipoVehiculo == 3:
             newVehiculo = Camion(placa, marca)
+        if self.existeVehiculo(newVehiculo):
+            print(f"El vehiculo {newVehiculo} ya se encuentra registrado.") #Uso de la sobrecarga
+            return
         newVehiculo.agregarVehiculo()
 
     def imprimirVerTodosApartados(self):
         mi_conexion = ConexionBaseDatos()
         mi_conexion.conectar()
-        consulta = """SELECT v.id as placa, case 
+        consulta = """SELECT vee.id, v.id as placa, case 
                         when v.idTipoVehiculo = 1 then 'Motocicleta'
                         when v.idTipoVehiculo = 2 then 'Carro'
                         when v.idTipoVehiculo = 3 then 'Camion'
@@ -150,17 +177,17 @@ class Principal:
         resultados = mi_conexion.ejecutar_consulta(consulta)
         placa = 0
         for fila in resultados:
-            if fila[0] != placa:
-                placa = fila[0]
-                print(f"\nPlaca: {fila[0]} | Tipo: {fila[1]} | Marca: {fila[2]} | Apartados:")
-            print(f"|Numero de estacionamiento: {fila[3]} | Hora de Entrada: {fila[4]} | Hora de salida: {fila[5]}|")
+            if fila[1] != placa:
+                placa = fila[1]
+                print(f"\nPlaca: {fila[1]} | Tipo: {fila[2]} | Marca: {fila[3]} | Apartados:")
+            print(f"|Numero de reserva {fila[0]} | Numero de estacionamiento: {fila[4]} | Hora de Entrada: {fila[5]} | Hora de salida: {fila[6]}|")
         mi_conexion.desconectar()
 
     def imprimirVerApartadosPorVehiculo(self, placa):
         mi_conexion = ConexionBaseDatos()
         mi_conexion.conectar()
         mi_conexion.dato = placa
-        consulta = """SELECT v.id as placa, case 
+        consulta = """SELECT vee.id, v.id as placa, case 
                         when v.idTipoVehiculo = 1 then 'Motocicleta'
                         when v.idTipoVehiculo = 2 then 'Carro'
                         when v.idTipoVehiculo = 3 then 'Camion'
@@ -172,12 +199,20 @@ class Principal:
                         having v.id = %s"""
         resultados = mi_conexion.ejecutar_consulta_where(consulta)
         placa = 0
+        existenReservas = False
         for fila in resultados:
-            if fila[0] != placa:
-                placa = fila[0]
-                print(f"\nPlaca: {fila[0]} | Tipo: {fila[1]} | Marca: {fila[2]} | Apartados:")
-            print(f"|Numero de estacionamiento: {fila[3]} | Hora de Entrada: {fila[4]} | Hora de salida: {fila[5]}|")
+            if fila[1] != placa:
+                existenReservas = True
+                placa = fila[1]
+                print(f"\nPlaca: {fila[1]} | Tipo: {fila[2]} | Marca: {fila[3]} | Apartados:")
+            print(f"|Numero de reserva {fila[0]} | Numero de estacionamiento: {fila[4]} | Hora de Entrada: {fila[5]} | Hora de salida: {fila[6]}|")
         mi_conexion.desconectar()
+        if not (existenReservas):
+            print("No tiene reservas\n")
+        return existenReservas
+        
+
+
 
     def imprimirVerVehiculos(self):
         mi_conexion = ConexionBaseDatos()
@@ -190,7 +225,7 @@ class Principal:
                         ,v.marca FROM Vehiculo v;"""
         resultados = mi_conexion.ejecutar_consulta(consulta)
         for fila in resultados:
-            print(f"|Placa = {fila[0]} | Tipo = {fila[1]} | Marca = {fila[2]}|\n")
+            print(f"|Placa = {fila[0]} | Tipo = {fila[1]} | Marca = {fila[2]}|")
         mi_conexion.desconectar()
 
     def imprimirRealizarReserva(self, estacionamiento, placa):
@@ -199,34 +234,76 @@ class Principal:
         newVehiculo = Vehiculo(placa)
         estacionamiento.buscar_espacio_disponible(newVehiculo, horaInicio, horaFinal)
         
+    def imprimirEliminarReserva(self, idReserva):
+        mi_conexion = ConexionBaseDatos(idReserva)
+        mi_conexion.conectar()
+        consulta = """DELETE FROM VehiculoXEspacioEstacionamiento WHERE id = %s;"""
+        mi_conexion.ejecutar_consulta_where(consulta)
+        print("Se ha eliminado exitosamente")
+        mi_conexion.desconectar()
+
+    def imprimirActualizarVehiculo(self,placa):
+        print("1) Tipo\n2) Marca")
+        opcion = int(input("Ingrese lo que desea cambiar: "))
+        if opcion == 1:
+            print("1) Motocicleta\n2) Carro\n3) Camion")
+            nuevoDato = int(input("Ingrese el nuevo tipo de vehiculo: "))
+            consulta = """UPDATE Vehiculo
+                SET idTipoVehiculo = %s
+                WHERE id = %s;
+                ;"""
+        elif opcion == 2:
+            nuevoDato = input("Ingrese la nueva marca: ")
+            consulta = """UPDATE Vehiculo
+                SET marca = %s
+                WHERE id = %s;
+                ;"""
+        mi_conexion = ConexionBaseDatos()
+        mi_conexion.conectar()
+        mi_conexion.actualizarVehiculo(consulta, nuevoDato, placa)
+        print("Se ha actualizado exitosamente")
+        mi_conexion.desconectar()
+
     def imprimirMenuPrincipal(self, estacionamiento):
         print("1) Agregar vehiculo")
-        print("2) Ver vehiculos")
-        print("3) Ver todas las reservas por vehiculo")
-        print("4) Realizar reserva")
-        print("5) Salir")
+        print("2) Actualizar vehiculo")
+        print("3) Ver vehiculos")
+        print("4) Operar Vehiculo")
+        print("5) Ver todas las reservas")
+        print("6) Salir")
 
-        opcion = int(input("Ingrese una opcion "))
+        opcion = int(input("Ingrese una opcion: "))
         if opcion == 1:
             self.imprimirAgregarVehiculo()
         elif opcion == 2:
             self.imprimirVerVehiculos()
+            placa = int(input("Ingrese la placa del vehiculo: "))
+            self.imprimirActualizarVehiculo(placa)
         elif opcion == 3:
-            self.imprimirVerTodosApartados()
+            self.imprimirVerVehiculos()
         elif opcion == 4:
             self.imprimirVerVehiculos()
-            placa = int(input("Ingrese la placa del vehiculo: "))
+            placa = int(input("\nIngrese la placa del vehiculo: "))
             while True:
-                opcion = int(input("1) Realizar reserva\n2) Ver reservas\n3) regresar"))
+                print("1) Realizar reserva\n2) Ver reservas\n3) Ver mi total\n4) Eliminar Reserva\n5) regresar\n")
+                opcion = int(input("Ingrese una opcion: "))
                 if opcion == 1:
                     self.imprimirRealizarReserva(estacionamiento,placa)
                 elif opcion == 2:
                     self.imprimirVerApartadosPorVehiculo(placa)
                 elif opcion == 3:
+                    estacionamiento.calcular_costoTotal(placa)
+                elif opcion == 4:
+                    if self.imprimirVerApartadosPorVehiculo(placa):
+                        numReserva = input("Ingrese el numero de reserva a eliminar: ")
+                        self.imprimirEliminarReserva(numReserva)
+                elif opcion == 5:
                     break
                 else:
                     print("Opcion no valida")
         elif opcion == 5:
+            self.imprimirVerTodosApartados()
+        elif opcion == 6:
             print("Ha salido del programa")
             return True
         else:
